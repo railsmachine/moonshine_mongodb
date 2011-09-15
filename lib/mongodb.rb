@@ -115,7 +115,7 @@ module Mongodb
           exec('10gen apt-key')
         ]
 
-      if options[:version] =~ /1.8.\..*$/
+      if options[:version] =~ /^1.8.*$/
         package 'mongodb18-10gen',
           :alias => 'mongodb',
           :ensure => options[:version],
