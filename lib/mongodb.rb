@@ -145,7 +145,7 @@ module Mongodb
         :before => service('mongodb')
 
       file '/etc/init.d/mongodb',
-        :ensure => :absent,
+        :ensure => :link, :target => '/lib/init/upstart-job',
         :before => service('mongodb')
 
       service 'mongodb',
