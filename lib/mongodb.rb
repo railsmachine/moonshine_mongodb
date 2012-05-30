@@ -96,7 +96,7 @@ module Mongodb
         :verbose => false,
         :loglevel => '0',
         :journal => true,
-        :version => :latest
+        :version => '2.0.5'
       }.with_indifferent_access.merge(hash.with_indifferent_access)
 
       file '/etc/apt/sources.list.d/mongodb.list',
