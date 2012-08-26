@@ -6,7 +6,10 @@ A plugin for installing and managing mongodb.
 
 === Instructions
 
+Rails 2
 * <tt>script/plugin install git://github.com/railsmachine/moonshine_mongodb.git</tt>
+Rails 3
+* <tt>rails plugin install git://github.com/railsmachine/moonshine_mongodb.git</tt>
 * Include the recipe in your Moonshine manifest
     recipe :mongodb
 * Create a file 'config/mongo.yml' with your settings:
