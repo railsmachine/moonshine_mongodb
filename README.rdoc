@@ -26,3 +26,5 @@ Rails 3
       <<: *global_settings
 
 * Copy over the mongo.rb initializer: <tt>cp vendor/plugins/moonshine_mongodb/templates/mongo.rb config/initializers/</tt>
+
+<em>Note: The provided `mongo.yml` and `mongo.rb` are just examples for mongo_mapper. You can use Mongoid or anything else instead.</em>
