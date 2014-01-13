@@ -86,7 +86,7 @@ module Mongodb
           exec('install_mongodb')
         ],
         :before => exec('rake tasks')
-    elsif ubuntu_lucid?
+    elsif ubuntu_lucid? || ubuntu_precise?
       options = {
         :dbpath => '/var/lib/mongodb',
         :logpath => '/var/log/mongodb',
@@ -96,7 +96,7 @@ module Mongodb
         :verbose => false,
         :loglevel => '0',
         :journal => true,
-        :version => '2.0.5'
+        :version => '2.4.5'
       }.with_indifferent_access.merge(hash.with_indifferent_access)
 
       file '/etc/apt/sources.list.d/mongodb.list',
@@ -166,6 +166,10 @@ module Mongodb
   end
 
   private
+  def ubuntu_precise?
+    Facter.lsbdistid == 'Ubuntu' && Facter.lsbdistrelease.to_f == 12.04
+  end
+
   def ubuntu_lucid?
     Facter.lsbdistid == 'Ubuntu' && Facter.lsbdistrelease.to_f == 10.04
   end
