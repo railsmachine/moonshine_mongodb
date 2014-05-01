@@ -1,10 +1,10 @@
 = Moonshine_Mongodb
 
-=== A plugin for Moonshine[http://github.com/railsmachine/moonshine]
+### A plugin for [Moonshine](http://github.com/railsmachine/moonshine)
 
 A plugin for installing and managing mongodb.
 
-=== Instructions
+### Instructions
 
 Rails 2
 * <tt>script/plugin install git://github.com/railsmachine/moonshine_mongodb.git</tt>
@@ -28,3 +28,6 @@ Rails 3
 * Copy over the mongo.rb initializer: <tt>cp vendor/plugins/moonshine_mongodb/templates/mongo.rb config/initializers/</tt>
 
 <em>Note: The provided `mongo.yml` and `mongo.rb` are just examples for mongo_mapper. You can use Mongoid or anything else instead.</em>
+
+***
+Unless otherwise specified, all content copyright &copy; 2014, [Rails Machine, LLC](http://railsmachine.com)
