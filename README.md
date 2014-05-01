@@ -1,4 +1,4 @@
-= Moonshine_Mongodb
+# Moonshine_Mongodb
 
 ### A plugin for [Moonshine](http://github.com/railsmachine/moonshine)
 
