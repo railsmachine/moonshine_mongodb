@@ -86,7 +86,7 @@ module Mongodb
           exec('install_mongodb')
         ],
         :before => exec('rake tasks')
-    elsif ubuntu_lucid? || ubuntu_precise?
+    elsif ubuntu_lucid? || ubuntu_precise? || ubuntu_trusty?
       options = {
         :dbpath => '/var/lib/mongodb',
         :logpath => '/var/log/mongodb',
