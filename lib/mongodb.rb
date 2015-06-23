@@ -55,7 +55,7 @@ module Mongodb
       file '/opt/local',           :ensure => :directory
       package 'wget',              :ensure => :installed
 
-      arch = Facter.architecture
+      arch = Facter.value(:architecture)
       arch = 'i686' if arch == 'i386'
 
       exec 'install_mongodb',
@@ -120,14 +120,14 @@ module Mongodb
           :alias => 'mongodb',
           :ensure => options[:version],
           :require => [ exec('apt-get update'), package('mongodb-10gen') ]
-        
+
         package 'mongodb-10gen', :ensure => :absent
       else
         package 'mongodb-10gen',
           :ensure => options[:version],
           :alias => 'mongodb',
           :require => [ exec('apt-get update'), package('mongodb18-10gen') ]
-        
+
         package 'mongodb18-10gen', :ensure => :absent
       end
 
@@ -167,14 +167,14 @@ module Mongodb
 
   private
   def ubuntu_precise?
-    Facter.lsbdistid == 'Ubuntu' && Facter.lsbdistrelease.to_f == 12.04
+    Facter.value(:lsbdistid) == 'Ubuntu' && Facter.value(:lsbdistrelease).to_f == 12.04
   end
 
   def ubuntu_lucid?
-    Facter.lsbdistid == 'Ubuntu' && Facter.lsbdistrelease.to_f == 10.04
+    Facter.value(:lsbdistid) == 'Ubuntu' && Facter.value(:lsbdistrelease).to_f == 10.04
   end
 
   def ubuntu_intrepid?
-    Facter.lsbdistid == 'Ubuntu' && Facter.lsbdistrelease.to_f == 8.10
+    Facter.value(:lsbdistid) == 'Ubuntu' && Facter.value(:lsbdistrelease).to_f == 8.10
   end
 end
