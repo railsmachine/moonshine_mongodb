@@ -166,6 +166,10 @@ module Mongodb
   end
 
   private
+  def ubuntu_trusty?
+    Facter.value(:lsbdistid) == 'Ubuntu' && Facter.value(:lsbdistrelease).to_f == 14.04
+  end
+
   def ubuntu_precise?
     Facter.value(:lsbdistid) == 'Ubuntu' && Facter.value(:lsbdistrelease).to_f == 12.04
   end
