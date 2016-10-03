@@ -122,6 +122,13 @@ module Mongodb
           :require => [ exec('apt-get update'), package('mongodb-10gen') ]
 
         package 'mongodb-10gen', :ensure => :absent
+      elsif options[:version] =~ /^2.6.*$/ || options[:version] =~ /^3.0.*$/
+        package 'mongodb-org',
+          :ensure => options[:version],
+          :alias => 'mongodb',
+          :require => [ exec('apt-get update'), package('mongodb-10gen') ]
+        
+        package 'mongodb-10gen', :ensure => :absent
       else
         package 'mongodb-10gen',
           :ensure => options[:version],
@@ -131,41 +138,51 @@ module Mongodb
         package 'mongodb18-10gen', :ensure => :absent
       end
 
-      file '/etc/mongodb.conf',
+      mongod_name = if options[:version] =~ /^2.6.*$/ || options[:version] =~ /^3.0.*$/
+        'mongod'
+      else
+        'mongodb'
+      end
+
+      file "/etc/#{mongod_name}.conf",
         :ensure => :present,
         :mode => '644',
-        :content => template(File.join(File.dirname(__FILE__), '..', 'templates', 'mongodb.conf.erb'), binding),
-        :before => service('mongodb'),
-        :notify => service('mongodb')
+        :content => template(File.join(File.dirname(__FILE__), '..', 'templates', "#{mongod_name}.conf.erb"), binding),
+        :before => service("#{mongod_name}"),
+        :notify => service("#{mongod_name}")
 
-      file '/etc/init/mongodb.conf',
+      file "/etc/init/#{mongod_name}.conf",
         :ensure => :present,
         :mode => '644',
-        :content => template(File.join(File.dirname(__FILE__), '..', 'templates', 'mongodb.upstart.erb'), binding),
-        :before => service('mongodb')
+        :content => template(File.join(File.dirname(__FILE__), '..', 'templates', "#{mongod_name}.upstart.erb"), binding),
+        :before => service("#{mongod_name}")
 
-      file '/etc/init.d/mongodb',
+      file "/etc/init.d/#{mongod_name}",
         :ensure => :link, :target => '/lib/init/upstart-job',
-        :before => service('mongodb')
+        :before => service("#{mongod_name}")
 
-      service 'mongodb',
+      service "#{mongod_name}",
         :ensure => :running,
-        :status => 'initctl status mongodb | grep running',
-        :start => 'initctl start mongodb',
-        :stop => 'initctl stop mongodb',
-        :restart => 'initctl restart mongodb',
+        :status => "initctl status #{mongod_name} | grep running",
+        :start => "initctl start #{mongod_name}",
+        :stop => "initctl stop #{mongod_name}",
+        :restart => "initctl restart #{mongod_name}",
         :provider => :base,
         :enable => true,
         :require => [
           package('mongodb'),
-          file('/etc/mongodb.conf'),
-          file('/etc/init/mongodb.conf'),
+          file("/etc/#{mongod_name}.conf"),
+          file("/etc/init/#{mongod_name}.conf"),
         ],
         :before => exec('rake tasks')
     end
   end
 
   private
+  def ubuntu_trusty?
+    Facter.value(:lsbdistid) == 'Ubuntu' && Facter.value(:lsbdistrelease).to_f == 14.04
+  end
+
   def ubuntu_precise?
     Facter.value(:lsbdistid) == 'Ubuntu' && Facter.value(:lsbdistrelease).to_f == 12.04
   end
