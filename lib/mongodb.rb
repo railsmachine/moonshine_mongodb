@@ -122,7 +122,7 @@ module Mongodb
           :require => [ exec('apt-get update'), package('mongodb-10gen') ]
 
         package 'mongodb-10gen', :ensure => :absent
-      elsif options[:version] =~ /^2.6.*$/
+      elsif options[:version] =~ /^2.6.*$/ || options[:version] =~ /^3.0.*$/
         package 'mongodb-org',
           :ensure => options[:version],
           :alias => 'mongodb',
@@ -138,7 +138,7 @@ module Mongodb
         package 'mongodb18-10gen', :ensure => :absent
       end
 
-      mongod_name = if options[:version] =~ /^2.6.*$/
+      mongod_name = if options[:version] =~ /^2.6.*$/ || options[:version] =~ /^3.0.*$/
         'mongod'
       else
         'mongodb'
