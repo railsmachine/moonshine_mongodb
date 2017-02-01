@@ -99,69 +99,78 @@ module Mongodb
         :version => '2.4.5'
       }.with_indifferent_access.merge(hash.with_indifferent_access)
 
-      file '/etc/apt/sources.list.d/mongodb.list',
-        :ensure => :present,
-        :mode => '644',
-        :content => template(File.join(File.dirname(__FILE__), '..', 'templates', 'mongodb.list.erb'), binding)
-
-      exec '10gen apt-key',
-        :command => 'apt-key adv --keyserver keyserver.ubuntu.com --recv 7F0CEB10',
-        :unless => 'apt-key list | grep 7F0CEB10'
-
-      exec 'apt-get update',
-        :command => 'apt-get update',
-        :require => [
-          file('/etc/apt/sources.list.d/mongodb.list'),
-          exec('10gen apt-key')
-        ]
-
-      if options[:version] =~ /^1.8.*$/
-        package 'mongodb18-10gen',
-          :alias => 'mongodb',
-          :ensure => options[:version],
-          :require => [ exec('apt-get update'), package('mongodb-10gen') ]
-
-        package 'mongodb-10gen', :ensure => :absent
+      if options[:version] =~ /^3.2.*$/
+        mongodb32(options)
+      elsif options[:version] =~ /^3.0.*$/
+        mongodb30(options)
+      elsif options[:version] =~ /^2.6.*$/
+        mongodb26(options)
       else
-        package 'mongodb-10gen',
-          :ensure => options[:version],
-          :alias => 'mongodb',
-          :require => [ exec('apt-get update'), package('mongodb18-10gen') ]
+        repo = "deb http://downloads-distro.mongodb.org/repo/ubuntu-upstart dist 10gen"
+        file '/etc/apt/sources.list.d/mongodb.list',
+          :ensure => :present,
+          :mode => '644',
+          :content => template(File.join(File.dirname(__FILE__), '..', 'templates', 'mongodb.list.erb'), binding)
 
-        package 'mongodb18-10gen', :ensure => :absent
+        exec '10gen apt-key',
+          :command => 'apt-key adv --keyserver keyserver.ubuntu.com --recv 7F0CEB10',
+          :unless => 'apt-key list | grep 7F0CEB10'
+
+        exec 'apt-get update',
+          :command => 'apt-get update',
+          :require => [
+            file('/etc/apt/sources.list.d/mongodb.list'),
+            exec('10gen apt-key')
+          ]
+
+        if options[:version] =~ /^1.8.*$/
+          package 'mongodb18-10gen',
+            :alias => 'mongodb',
+            :ensure => options[:version],
+            :require => [ exec('apt-get update'), package('mongodb-10gen') ]
+
+          package 'mongodb-10gen', :ensure => :absent
+        else
+          package 'mongodb-10gen',
+            :ensure => options[:version],
+            :alias => 'mongodb',
+            :require => [ exec('apt-get update'), package('mongodb18-10gen') ]
+
+          package 'mongodb18-10gen', :ensure => :absent
+        end
+
+        file '/etc/mongodb.conf',
+          :ensure => :present,
+          :mode => '644',
+          :content => template(File.join(File.dirname(__FILE__), '..', 'templates', 'mongodb.conf.erb'), binding),
+          :before => service('mongodb'),
+          :notify => service('mongodb')
+
+        file '/etc/init/mongodb.conf',
+          :ensure => :present,
+          :mode => '644',
+          :content => template(File.join(File.dirname(__FILE__), '..', 'templates', 'mongodb.upstart.erb'), binding),
+          :before => service('mongodb')
+
+        file '/etc/init.d/mongodb',
+          :ensure => :link, :target => '/lib/init/upstart-job',
+          :before => service('mongodb')
+
+        service 'mongodb',
+          :ensure => :running,
+          :status => 'initctl status mongodb | grep running',
+          :start => 'initctl start mongodb',
+          :stop => 'initctl stop mongodb',
+          :restart => 'initctl restart mongodb',
+          :provider => :base,
+          :enable => true,
+          :require => [
+            package('mongodb'),
+            file('/etc/mongodb.conf'),
+            file('/etc/init/mongodb.conf'),
+          ],
+          :before => exec('rake tasks')
       end
-
-      file '/etc/mongodb.conf',
-        :ensure => :present,
-        :mode => '644',
-        :content => template(File.join(File.dirname(__FILE__), '..', 'templates', 'mongodb.conf.erb'), binding),
-        :before => service('mongodb'),
-        :notify => service('mongodb')
-
-      file '/etc/init/mongodb.conf',
-        :ensure => :present,
-        :mode => '644',
-        :content => template(File.join(File.dirname(__FILE__), '..', 'templates', 'mongodb.upstart.erb'), binding),
-        :before => service('mongodb')
-
-      file '/etc/init.d/mongodb',
-        :ensure => :link, :target => '/lib/init/upstart-job',
-        :before => service('mongodb')
-
-      service 'mongodb',
-        :ensure => :running,
-        :status => 'initctl status mongodb | grep running',
-        :start => 'initctl start mongodb',
-        :stop => 'initctl stop mongodb',
-        :restart => 'initctl restart mongodb',
-        :provider => :base,
-        :enable => true,
-        :require => [
-          package('mongodb'),
-          file('/etc/mongodb.conf'),
-          file('/etc/init/mongodb.conf'),
-        ],
-        :before => exec('rake tasks')
     end
   end
 
@@ -176,5 +185,86 @@ module Mongodb
 
   def ubuntu_intrepid?
     Facter.value(:lsbdistid) == 'Ubuntu' && Facter.value(:lsbdistrelease).to_f == 8.10
+  end
+
+  def mongodb26
+    # TODO
+    # repo = "deb http://downloads-distro.mongodb.org/repo/ubuntu-upstart dist 10gen"
+  end
+
+  def mongodb30
+    # TODO
+    # repo = "deb http://repo.mongodb.org/apt/ubuntu #{Facter.value(:lsbdistcodename)}/mongodb-org/3.0 multiverse"
+  end
+
+  def mongodb32(hash = {})
+    puts "MongoDB 3.2: #{hash[:version]}"
+    options = {
+      :dbpath => '/var/lib/mongodb',
+      :logpath => '/var/log/mongodb',
+      :port => '27017',
+      :bind_ip => '127.0.0.1',
+      :cpu_logging => false,
+      :verbose => false,
+      :loglevel => '0',
+      :journal => true,
+      :version => '3.2.10'
+    }.with_indifferent_access.merge(hash.with_indifferent_access)
+    file '/etc/mongodb.conf', :ensure => :absent
+    file '/etc/init/mongodb.conf', :ensure => :absent
+    file '/etc/init.d/mongodb', :ensure => :absent
+
+    repo = "deb http://repo.mongodb.org/apt/ubuntu #{Facter.value(:lsbdistcodename)}/mongodb-org/3.2 multiverse"
+    file '/etc/apt/sources.list.d/mongodb.list',
+      :ensure => :present,
+      :mode => '644',
+      :content => template(File.join(File.dirname(__FILE__), '..', 'templates', 'mongodb.list.erb'), binding)
+
+    exec '10gen apt-key',
+      :command => 'apt-key adv --keyserver keyserver.ubuntu.com --recv EA312927',
+      :unless => 'apt-key list | grep EA312927'
+
+    exec 'apt-get update',
+      :command => 'apt-get update',
+      :require => [
+        file('/etc/apt/sources.list.d/mongodb.list'),
+        exec('10gen apt-key')
+      ]
+
+    # package
+    package 'mongodb-org',
+      :ensure => options[:version],
+      :alias => 'mongodb',
+      :require => [ exec('apt-get update'), package('mongodb18-10gen'), package('mongodb-10gen') ]
+
+    %w(mongodb-org-server mongodb-org-shell mongodb-org-mongos mongodb-org-tools).each do |pkg|
+      package pkg,
+        :ensure => options[:version],
+        :require => [ exec('apt-get update'), package('mongodb18-10gen'), package('mongodb-10gen') ]
+    end
+
+    package 'mongodb18-10gen', :ensure => :absent
+    package 'mongodb-10gen', :ensure => :absent
+
+    # TODO: convert to YAML format
+    file '/etc/mongod.conf',
+      :ensure => :present,
+      :mode => '644',
+      :content => template(File.join(File.dirname(__FILE__), '..', 'templates', 'mongodb.conf.erb'), binding),
+      :require => package('mongodb'),
+      :before => service('mongod'),
+      :notify => service('mongod')
+
+    service 'mongod',
+      :ensure=> :running,
+      :provider => :upstart,
+      :enable => true,
+      :require => [
+        package('mongodb'),
+        file('/etc/mongodb.conf'),
+        file('/etc/init/mongodb.conf'),
+        file('/etc/init.d/mongodb')
+      ],
+      :before => exec('rake tasks')
   end
 end
